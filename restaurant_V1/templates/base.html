@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ресторан «Гастроном»{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="/" class="nav-logo">
+            Гастроном
+            <span>Ресторан</span>
+        </a>
+        <ul class="nav-links">
+            <li><a href="/" class="{{ 'active' if request.endpoint == 'index' }}">Главная</a></li>
+            <li><a href="/menu" class="{{ 'active' if request.endpoint == 'menu' }}">Меню</a></li>
+            <li><a href="/reserve" class="{{ 'active' if request.endpoint == 'reserve' }}">Бронирование</a></li>
+        </ul>
+    </nav>
+
+    <main>{% block content %}{% endblock %}</main>
+
+    <footer>
+        <strong>Ресторан «Гастроном»</strong> &nbsp;·&nbsp; ул. Кулинарная, 12 &nbsp;·&nbsp; +7 (495) 123-45-67 &nbsp;·&nbsp; Ежедневно 12:00 – 00:00
+    </footer>
+
+    <div id="toast"></div>
+
+    <script>
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = isError ? 'error show' : 'show';
+            setTimeout(() => t.className = '', 3500);
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
