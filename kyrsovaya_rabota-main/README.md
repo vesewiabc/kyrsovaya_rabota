@@ -1,1 +1,0 @@
-# kyrsovaya_rabota
