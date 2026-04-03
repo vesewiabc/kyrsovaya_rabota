@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Персонал{% endblock %}
+{% block content %}
+<div class="page-header"><h1>Персонал</h1></div>
+
+<div class="section-title">Пользователи системы</div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>ФИО</th><th>Логин</th><th>Роль</th><th>Дата регистрации</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.full_name }}</td>
+      <td><code>{{ u.username }}</code></td>
+      <td><span class="badge badge-role-{{ u.role }}">{{ u.role }}</span></td>
+      <td>{{ u.created_at[:10] if u.created_at else '—' }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="section-title">Сотрудники</div>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>Имя</th><th>Фамилия</th><th>Телефон</th><th>Должность</th></tr></thead>
+    <tbody>
+    {% for e in employees %}
+    <tr>
+      <td>{{ e.first_name }}</td>
+      <td>{{ e.last_name }}</td>
+      <td>{{ e.phone or '—' }}</td>
+      <td>{{ e.role }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

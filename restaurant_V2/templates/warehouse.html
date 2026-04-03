@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Склад{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Управление складом</h1>
+  {% if session.role in ['администратор','менеджер','кладовщик'] %}
+  <button class="btn btn-primary" onclick="openModal('add-wh-modal')">+ Добавить позицию</button>
+  {% endif %}
+</div>
+
+<form class="search-bar" method="GET">
+  <input type="text" name="q" value="{{ search }}" placeholder="Поиск по названию...">
+  <button type="submit" class="btn btn-outline">Найти</button>
+  {% if search %}<a href="{{ url_for('warehouse') }}" class="btn btn-outline">✕ Сбросить</a>{% endif %}
+</form>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr><th>Наименование</th><th>Ед.</th><th>Остаток</th><th>Минимум</th><th>Цена/ед.</th><th>Срок годности</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+    {% for item in items %}
+    {% set low = item.quantity <= item.min_quantity %}
+    <tr class="{% if low %}row-warning{% endif %}">
+      <td>{{ item.name }}</td>
+      <td>{{ item.unit }}</td>
+      <td>{{ item.quantity }}</td>
+      <td>{{ item.min_quantity }}</td>
+      <td>{{ "{:,.0f}".format(item.price_per_unit) }} ₽</td>
+      <td>{{ item.expiry_date or '—' }}</td>
+      <td>{% if low %}<span class="badge badge-отменен">Мало</span>{% else %}<span class="badge badge-закрыт">Норма</span>{% endif %}</td>
+      <td>
+        {% if session.role in ['администратор','менеджер','кладовщик'] %}
+        <button class="btn btn-xs btn-outline" onclick="editWh({{ item.id }}, {{ item.quantity }}, '{{ item.expiry_date or '' }}')">Изменить</button>
+        {% endif %}
+        {% if session.role in ['администратор','менеджер'] %}
+        <button class="btn btn-xs btn-danger" onclick="deleteWh({{ item.id }})">✕</button>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="modal" id="add-wh-modal">
+  <div class="modal-box">
+    <div class="modal-header"><h3>Новая позиция</h3><button class="modal-close" onclick="closeModal('add-wh-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Наименование</label><input type="text" id="wh-name"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Единица</label><input type="text" id="wh-unit" placeholder="кг / шт / л"></div>
+        <div class="form-group"><label>Количество</label><input type="number" id="wh-qty" step="0.01" value="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Минимум</label><input type="number" id="wh-min" step="0.01" value="0"></div>
+        <div class="form-group"><label>Цена за ед. (₽)</label><input type="number" id="wh-price" step="0.01" value="0"></div>
+      </div>
+      <div class="form-group"><label>Срок годности</label><input type="date" id="wh-exp"></div>
+      <button class="btn btn-primary btn-full" onclick="addWh()">Добавить</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="edit-wh-modal">
+  <div class="modal-box">
+    <div class="modal-header"><h3>Изменить остаток</h3><button class="modal-close" onclick="closeModal('edit-wh-modal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-wh-id">
+      <div class="form-group"><label>Количество</label><input type="number" id="edit-wh-qty" step="0.01"></div>
+      <div class="form-group"><label>Срок годности</label><input type="date" id="edit-wh-exp"></div>
+      <button class="btn btn-primary btn-full" onclick="saveWh()">Сохранить</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+async function addWh(){
+  const r=await fetch('/api/warehouse/add',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:document.getElementById('wh-name').value,unit:document.getElementById('wh-unit').value,
+      quantity:+document.getElementById('wh-qty').value,min_quantity:+document.getElementById('wh-min').value,
+      price_per_unit:+document.getElementById('wh-price').value,expiry_date:document.getElementById('wh-exp').value})});
+  const d=await r.json(); if(d.ok) location.reload(); else alert(d.error);
+}
+function editWh(id,qty,exp){
+  document.getElementById('edit-wh-id').value=id;
+  document.getElementById('edit-wh-qty').value=qty;
+  document.getElementById('edit-wh-exp').value=exp;
+  openModal('edit-wh-modal');
+}
+async function saveWh(){
+  const id=document.getElementById('edit-wh-id').value;
+  const r=await fetch(`/api/warehouse/${id}/update`,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({quantity:+document.getElementById('edit-wh-qty').value,expiry_date:document.getElementById('edit-wh-exp').value})});
+  const d=await r.json(); if(d.ok) location.reload();
+}
+async function deleteWh(id){
+  if(!confirm('Удалить позицию?')) return;
+  await fetch(`/api/warehouse/${id}`,{method:'DELETE'}); location.reload();
+}
+</script>
+{% endblock %}
